@@ -88,7 +88,7 @@
                 </option>
                 <option>
                     <name>OGChipSelectMenu</name>
-                    <state>MSP430F149	MSP430F149</state>
+                    <state>MSP430FR6989	MSP430FR6989</state>
                 </option>
                 <option>
                     <name>GStackHeapOverride</name>
@@ -96,11 +96,11 @@
                 </option>
                 <option>
                     <name>GStackSize2</name>
-                    <state>80</state>
+                    <state>160</state>
                 </option>
                 <option>
                     <name>GHeapSize2</name>
-                    <state>80</state>
+                    <state>160</state>
                 </option>
                 <option>
                     <name>RadioDataModelType</name>
@@ -201,7 +201,7 @@
                 </option>
                 <option>
                     <name>Math description</name>
-                    <state></state>
+                    <state>Default variants of cos, sin, tan, log, log10, pow, and exp.</state>
                 </option>
                 <option>
                     <name>GESupportFrwp</name>
@@ -351,7 +351,7 @@
                 </option>
                 <option>
                     <name>OutputFile</name>
-                    <state></state>
+                    <state>$FILE_BNAME$.r43</state>
                 </option>
                 <option>
                     <name>CCLibConfigHeader</name>
@@ -700,7 +700,7 @@
             <data>
                 <extensions></extensions>
                 <cmdline></cmdline>
-                <hasPrio>0</hasPrio>
+                <hasPrio>176</hasPrio>
                 <buildSequence>inputOutputBased</buildSequence>
             </data>
         </settings>
@@ -725,7 +725,7 @@
                 </option>
                 <option>
                     <name>OutputFile</name>
-                    <state>templproj.d43</state>
+                    <state>CPU22.d43</state>
                 </option>
                 <option>
                     <name>OutputFormat</name>
@@ -1096,7 +1096,11 @@
                 <debug>1</debug>
                 <option>
                     <name>CUTest</name>
-                    <state>###Uninitialized###</state>
+                    <state>-I$TOOLKIT_DIR$\inc</state>
+                    <state>-@$TOOLKIT_DIR$\bin\iar.cmd</state>
+                    <state>-@$PROJ_DIR$\source.txt</state>
+                    <state>-@$PROJ_DIR$\include.txt</state>
+                    <state>--preinclude=$PROJ_DIR$\IAR_ULPAdvisor_Defs.h</state>
                 </option>
                 <option>
                     <name>ULPRules</name>
@@ -1109,7 +1113,7 @@
                 </option>
                 <option>
                     <name>OutputFile</name>
-                    <state></state>
+                    <state>$PROJ_FNAME$.ulp</state>
                 </option>
                 <option>
                     <name>ULPStatus</name>
