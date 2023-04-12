@@ -14,6 +14,116 @@ init:   MOV     #SFE(CSTACK), SP        ; set up stack
 
 main:   NOP                             ; main program
         MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
+        mov.w   #0xB0,R4  ;   10110000 suma R13 + R10
+        mov.W   #2,R13
+        mov.w   #4,R10
+        
+        
+    
+addsub:
+        MOV R4,R14
+        AND #0x30, R14 ;decode dd
+        MOV R4,R9
+        AND #0x0C,R9  ;decode ss
+        
+        call #loadoperand
+        
+        cmp.b #00000000b,R9
+        jeq add_R10
+        
+        cmp.b #00000100b,R9
+        jeq add_R11
+        
+        cmp.b #00001000b,R9
+        jeq add_R12
+        
+        cmp.b #00001100b,R9
+        jeq add_R13
+        
+        ;call #store_result
+        
+loadoperand:
+
+        cmp.b #00000000b, R14
+        jeq load_register_10
+        
+        cmp.b #00010000b, R14
+        jeq load_register_11
+        
+        cmp.b #00100000b, R14
+        jeq load_register_12
+        
+        cmp.b #00110000b, R14
+        jeq load_register_13
+        
+        
+        
+load_register_10:
+        mov R10,15
+        ret
+        
+load_register_11:
+        mov R11,R15
+        ret
+
+load_register_12:
+        mov R12,R15
+        ret
+
+load_register_13:
+        mov R13,R15
+        ret
+
+add_R10:
+        add R10,R15
+        call #store_result
+        ret
+add_R11:
+        add R11,R15
+        call #store_result
+        ret
+add_R12:
+        add R12,R15
+        call #store_result
+        ret
+add_R13:
+        add R13,R15
+        call #store_result
+        ret
+        
+store_result: 
+
+
+        cmp.b #00000000b, R14 ;I DONT THINK WE NEED THIS SINCE WE DONT WRITE TO R10
+        jeq store_R10
+        
+        cmp.b #00010000b, R14
+        jeq store_R11
+        
+        cmp.b #00100000b, R14
+        jeq store_R12
+        
+        cmp.b #00110000b, R14
+        jeq store_R13
+ 
+store_R10:      ;AGAIN I DONT THIN THIS IS NECCESARY JUST ADDING TO KEEP CODE CONSISTENT CAN BE REMOVED 
+                ;MAYBE ADDING ERROR TEXT OR SOMETHING
+        mov R15,R8
+        mov R8,R10
+        ret
+store_R11:
+        mov R15,R8
+        mov R8,R11
+        ret
+store_R12:
+        mov R15,R8
+        mov R8,R12
+        ret
+store_R13:
+        mov R15,R8
+        mov R8,R13
+        ret
+         
         JMP $                           ; jump to current location '$'
                                         ; (endless loop)
         END
