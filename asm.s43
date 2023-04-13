@@ -14,19 +14,38 @@ init:   MOV     #SFE(CSTACK), SP        ; set up stack
 
 main:   NOP                             ; main program
         MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
-        mov.w   #0xB0,R4  ;   10110000 suma R13 + R10
+        ;mov.w   #0xB0,R4  ;   10110000 suma R13 + R10
+        ;mov.w   #0xC0,R4      ;2s R10
+        mov.w   #0xC4,R4        ;shiftR10
         mov.W   #2,R13
-        mov.w   #4,R10
+        mov.w   #8,R10
         
-        
-    
+decoder:
+      
+      mov R4,R5
+      and #11000000b,R5
+      cmp.b #10000000b,R5
+      jeq addsub
+      ;if not add check 2s or shift 
+      mov R4,R5
+      and #00000100b,R5
+      cmp #00000100b,R5
+      jeq shift_right_operation
+      jl twos_complement_operation
+      
+      
+      
+
+
+
+          
 addsub:
         MOV R4,R14
         AND #0x30, R14 ;decode dd
         MOV R4,R9
         AND #0x0C,R9  ;decode ss
         
-        call #loadoperand
+        call #load_operand
         
         cmp.b #00000000b,R9
         jeq add_R10
@@ -39,10 +58,69 @@ addsub:
         
         cmp.b #00001100b,R9
         jeq add_R13
+
+twos_complement_operation:
+        mov R4,R14
+        AND #00000011,R14
         
-        ;call #store_result
+        cmp.b #00000000b,R14
+        jeq Tws_R10
+        cmp.b #00000001b,R14
+        jeq Tws_R11
+        cmp.b #00000010b,R14
+        jeq Tws_R12
+        cmp.b #00000011b,R14
+        jeq Tws_R13
+
+Tws_R10: 
+        inv R10
+        inc R10
+        call ALU_RETURN ;Needs to be implemented, next step after alu is done
+
+Tws_R11: 
+        inv R11
+        inc R11
+        call ALU_RETURN
+Tws_R12: 
+        inv R12
+        inc R12
+        call ALU_RETURN
+Tws_R13: 
+        inv R13
+        inc R13
+        call ALU_RETURN
+Tws_R14: 
+        inv R14
+        inc R14
+        call ALU_RETURN
         
-loadoperand:
+shift_right_operation:
+        mov R4,R14
+        AND #00000011,R14
+        
+        cmp.b #00000000b,R14
+        jeq shift_R10
+        cmp.b #00000001b,R14
+        jeq shift_R11
+        cmp.b #00000010b,R14
+        jeq shift_R12
+        cmp.b #00000011b,R14
+        jeq shift_R13
+
+shift_R10:
+        rra R10
+shift_R11:
+        rra R11
+shift_R12:
+        rra R12
+shift_R13:
+        rra R13
+        
+ALU_RETURN:
+        
+
+        
+load_operand:
 
         cmp.b #00000000b, R14
         jeq load_register_10
