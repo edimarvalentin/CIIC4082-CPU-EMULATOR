@@ -1,0 +1,106 @@
+#include "msp430.h"                     ; #define controlled include file
+
+        NAME    main                    ; module name
+
+        PUBLIC  main                    ; make the main label vissible
+                                        ; outside this module
+
+
+        ORG     0x1C00
+
+;Define high and low byte values to generate chars J, N, F
+;JNF           J    N    F
+jnfH	db 0x78,0x6C,0x8F
+jnfL	db 0x00,0x82,0x00
+
+
+display1	equ	9      ; Aplhanumeric A1 begins at S18
+display2	equ	5      ; Aplhanumeric A2 begins at S10
+display3 	equ	3      ; Aplhanumeric A3 begins at S6
+display4 	equ	18     ; Aplhanumeric A4 begins at S36
+display5	equ	14     ; Aplhanumeric A5 begins at S28
+display7	equ	7      ; Aplhanumeric A6 begins at S14
+
+
+displayPositions        db 9, 5, 3, 18, 14, 7
+
+;                       B           R           Y           A           N           
+integrante1     db 0xF1, 0x50, 0xCF, 0x02, 0x00, 0xB0, 0xEF, 0x00, 0x6C, 0x82, 0x00, 0x00
+
+
+;                       E           D           I           M           A           R
+integrante2     db 0x9F, 0x00, 0xF0, 0x00, 0x90, 0x50, 0x6C, 0xAC,0 0xEF, 0x00, 0xCF, 0x02
+
+
+;                       J           O           H           N                      
+integrante3     db 0x70, 0x00, 0xFC, 0x00, 0x6F, 0x00, 0x6C, 0x82, 0x00, 0x00, 0x00, 0x00
+
+
+;                       N           O           R           E           L           Y
+integrante4     db 0x6C, 0x82, 0xFC, 0x00, 0xCF, 0x02, 0x9F, 0x00, 0x1C, 0x00, 0x00, 0xB0
+
+
+
+
+        ORG     0FFFEh
+        DC16    init                    ; set reset vector to 'init' label
+
+        RSEG    CSTACK                  ; pre-declaration of segment
+        RSEG    CODE                    ; place program in 'CODE' segment
+
+init:   MOV     #SFE(CSTACK), SP        ; set up stack
+
+main:   NOP                             ; main program
+        MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
+
+        ;Initialize LCD segments 0 - 21; 26 - 43
+	MOV.W   #0xFFFF,&LCDCPCTL0
+	MOV.W   #0xfc3f,&LCDCPCTL1
+    	MOV.W   #0x0fff,&LCDCPCTL2
+
+
+UnlockGPIO:
+        bic.w   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on default
+                                        ; high-impedance mode to activate
+                                        ; previously configured port settings
+
+	;Initialize LCD_C
+    	;ACLK, Divider = 1, Pre-divider = 16; 4-pin MUX
+	MOV.W   #0x041e,&LCDCCTL0
+
+    	;VLCD generated internally,
+    	;V2-V4 generated internally, v5 to ground
+    	;Set VLCD voltage to 2.60v
+    	;Enable charge pump and select internal reference for it
+    	MOV.W   #0x0208,&LCDCVCTL
+
+	MOV.W   #0x8000,&LCDCCPCTL   ;Clock synchronization enabled
+
+	MOV.W   #2,&LCDCMEMCTL       ;Clear LCD memory
+
+	;Turn LCD on
+	BIS.W   #1,&LCDCCTL0
+        
+        
+        MOV.B   #0, R5
+        
+        MOV.B   #9, R14
+        
+NameDisplay:
+
+        MOV.B   integrante1(R5), 0x0a20(R14)
+        INC     R5
+        MOV.B   integrante1(R5), 0x0a20+1(R14)
+        MOV.B   displayPositions(R5), R14
+        INC     R5
+        CMP     #12, R5
+        JNZ     NameDisplay
+        
+        
+
+
+
+        JMP $                           ; jump to current location '$'
+                                        ; (endless loop)
+        NOP
+        END
