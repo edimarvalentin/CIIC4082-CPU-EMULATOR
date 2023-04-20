@@ -14,26 +14,72 @@ init:   MOV     #SFE(CSTACK), SP        ; set up stack
 
 main:   NOP                             ; main program
         MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
-        ;mov.w   #0xB0,R4  ;   10110000 suma R13 + R10
+        mov.w   #0xB0,R4  ;   10110000 suma R13 + R10
         ;mov.w   #0xC0,R4      ;2s R10
-        mov.w   #0xC4,R4        ;shiftR10
+        ;mov.w   #0xC4,R4 ;shiftR10
+        ;mov.w   #0xCC,R4 ; IN 
+        ;mov.w   #0xE0,R4  ;OUT
+       ; mov.w   #0xF0,R4 ;JR30
         mov.W   #2,R13
         mov.w   #8,R10
         
 decoder:
+        
+        mov R4,R5
+        AND.b #11110000b,R5
+        cmp.b #11110000b,R5
+        jeq JR30
+        mov R4,R5
+        AND.b #11100000b,R5
+        cmp.b #11100000b,R5
+        jeq outsub
+        mov R4,R5
+        AND.b #11001100b,R5
+        cmp.b #11001100b,R5
+        jeq insub
+        mov R4,R5
+        AND.b #11000100b,R5
+        cmp.b #11000100b,R5
+        jeq shift_right_operation
+        mov R4,R5
+        AND.b #11000000b,R5
+        cmp.b #11000000b,R5
+        jeq twos_complement_operation
+        jl addsub
       
-      mov R4,R5
-      and #11000000b,R5
-      cmp.b #10000000b,R5
-      jeq addsub
-      ;if not add check 2s or shift 
-      mov R4,R5
-      and #00000100b,R5
-      cmp #00000100b,R5
-      jeq shift_right_operation
-      jl twos_complement_operation
+     
       
+JR30:
+      mov #1,R8
+
+insub:
+       mov R4,R5
+       AND.b #00000011b,R5
+       cmp.b #3,R5
+       jeq inR13
+       
+       cmp.b #2,R5
+       jeq inR12
+       
+       cmp.b #1,R5
+       jeq inR11
+       jl inR10
+       
+inR13:
+      mov &P1IN,R13
+      rra R13
       
+inR13:
+      mov &P1IN,R12
+      rra R12
+inR13:
+      mov &P1IN,R11
+      rra R11
+inR13:
+      mov &P1IN,R10
+      rra R10
+outsub:
+      mov #1,R8
       
 
 
