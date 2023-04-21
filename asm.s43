@@ -4,7 +4,32 @@
 
         PUBLIC  main                    ; make the main label vissible
                                         ; outside this module
-        ORG     0FFFEh
+        
+        
+        ORG     0x1C00                  ; moving to set some variables
+
+; Letters and Digits Mapping for LCD
+; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
+; Indice          0     1     2     3     4     5     6     7     8     9     10    11    12    13    14    15   16   17    18    19    20     21     22    23   24   25     26    27    28    29    30    31    32    33    34    35    36
+highByte db     0xEF, 0xF1, 0x9C, 0xF0, 0x9F, 0x8F, 0xBD, 0x6F, 0x90, 0x98, 0x00, 0x1C, 0x6C, 0x6C, 0xFC, 0xCF, 0xFC, 0xCF, 0xB7, 0x80, 0x7C, 0x0C, 0x6C, 0x00, 0x00, 0x90, 0x00, 0xFC, 0x60, 0xDB, 0xF3, 0x67, 0xB7, 0xBF, 0x80, 0xFF, 0xF7
+lowByte  db     0x00, 0x50, 0x00, 0x50, 0x00, 0X00, 0x00, 0x00, 0x50, 0x50, 0x72, 0x00, 0XA0, 0x82, 0x00, 0x00, 0x02, 0x02, 0x00, 0x50, 0x00, 0X28, 0x0A, 0xAA, 0xB0, 0x28, 0x00, 0x28, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00    
+
+;LCD Alphanumerics 1 to 6
+alphanumeric db 9, 5, 3, 18, 14, 7
+
+;CPURUM array
+CPURUM  db      2, 15, 20, 17, 20, 12
+        align   1
+        
+;Names
+EDIMAR db       4, 3, 8, 12, 0, 17
+       align    1
+       
+JOHN   db       9, 14, 7, 13, 26, 26
+       align    1
+        
+        ORG     0FFFEh                  ; back to normal
+        
         DC16    init                    ; set reset vector to 'init' label
 
         RSEG    CSTACK                  ; pre-declaration of segment
@@ -14,240 +39,85 @@ init:   MOV     #SFE(CSTACK), SP        ; set up stack
 
 main:   NOP                             ; main program
         MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
-        mov.w   #0xB0,R4  ;   10110000 suma R13 + R10
-        ;mov.w   #0xC0,R4      ;2s R10
-        ;mov.w   #0xC4,R4 ;shiftR10
-        ;mov.w   #0xCC,R4 ; IN 
-        ;mov.w   #0xE0,R4  ;OUT
-       ; mov.w   #0xF0,R4 ;JR30
-        mov.W   #2,R13
-        mov.w   #8,R10
+
+        ;Initialize LCD segments 0 - 21; 26 - 43
+	MOV.W   #0xFFFF,&LCDCPCTL0
+	MOV.W   #0xfc3f,&LCDCPCTL1
+    	MOV.W   #0x0fff,&LCDCPCTL2
         
-decoder:
+UnlockGPIO:
+        BIC.W   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on default
+                                        ; high-impedance mode to activate
+                                        ; previously configured port settings
+
+
+
+        ;Intialize LCD_C
+        MOV.W   #0x041e,&LCDCCTL0
         
-        mov R4,R5
-        AND.b #11110000b,R5
-        cmp.b #11110000b,R5
-        jeq JR30
-        mov R4,R5
-        AND.b #11100000b,R5
-        cmp.b #11100000b,R5
-        jeq outsub
-        mov R4,R5
-        AND.b #11001100b,R5
-        cmp.b #11001100b,R5
-        jeq insub
-        mov R4,R5
-        AND.b #11000100b,R5
-        cmp.b #11000100b,R5
-        jeq shift_right_operation
-        mov R4,R5
-        AND.b #11000000b,R5
-        cmp.b #11000000b,R5
-        jeq twos_complement_operation
-        jl addsub
+        ;VLCD generated internally,
+    	;V2-V4 generated internally, v5 to ground
+    	;Set VLCD voltage to 2.60v
+    	;Enable charge pump and select internal reference for it
+    	MOV.W   #0x0208,&LCDCVCTL
+        
+        MOV.W   #0x8000,&LCDCCPCTL   ;Clock synchronization enabled
+
+        MOV.W   #2,&LCDCMEMCTL       ;Clear LCD memory
+
+        BIS.W   #1,&LCDCCTL0         ;Turn on LCD
+
+;Display CPURUM
+displayCPURUM:
+        PUSH.W R4 ;Save the content of R4 to the stack to back it up
+        MOV.W #CPURUM, R4 ; Move the address of CPURUM to R4 so we can iterate it to the LCD
+        CALL #R4toLCD ;Display the content of R4 to the LCD
+        POP.W R4 ;Return R4 to the original state
+
+        PUSH.W R4 ;Save the content of R4 to the stack to back it up
+        MOV.W #EDIMAR, R4 ; Move the address of CPURUM to R4 so we can iterate it to the LCD
+        CALL #R4toLCD ;Display the content of R4 to the LCD
+        POP.W R4 ;Return R4 to the original state
+
+        PUSH.W R4 ;Save the content of R4 to the stack to back it up
+        MOV.W #JOHN, R4 ; Move the address of CPURUM to R4 so we can iterate it to the LCD
+        CALL #R4toLCD ;Display the content of R4 to the LCD
+        POP.W R4 ;Return R4 to the original state
+           
+
+R4toLCD:
+        PUSH.W R5                      ;We're gonna need these three registers to do our iteration business. We're backing up their contents
+        PUSH.W R6                      ;to the stack.
+        PUSH.W R7                       
+
+        MOV.B #0, R5                   ;We're gonna use R5 to iterate the alphanumerics on the LCD
+R4toLCDLoop:
+        MOV.B  @R4+, R6                 ;This is is gonna work as our index for the content on R4. We move to it to R6 and increment it by one
+
+        MOV.B alphanumeric(R5), R7    ;We copy the position of the alphanumeric to the LCD
+
+
+        MOV.B highByte(R6), 0x0A20(R7)  ;The corresponding high byte with the corresponding alphanumeric
       
-     
+        MOV.B lowByte(R6), 0x0A20+1(R7) ;The corresponding low byte with the corresponding alphanumeric
       
-JR30:
-      mov #1,R8
-
-insub:
-       mov R4,R5
-       AND.b #00000011b,R5
-       cmp.b #3,R5
-       jeq inR13
-       
-       cmp.b #2,R5
-       jeq inR12
-       
-       cmp.b #1,R5
-       jeq inR11
-       jl inR10
-       
-inR13:
-      mov &P1IN,R13
-      rra R13
+        INC.B R5                        ;Increment R5 to go to the next alphanumeric
       
-inR13:
-      mov &P1IN,R12
-      rra R12
-inR13:
-      mov &P1IN,R11
-      rra R11
-inR13:
-      mov &P1IN,R10
-      rra R10
-outsub:
-      mov #1,R8
+        CMP #6, R5                      ;If R5 reached 6, that means there's no more space on the LCD
       
+        JNE R4toLCDLoop                 ;If there still psace, repeat the subroutine with the new values
 
-
-
-          
-addsub:
-        MOV R4,R14
-        AND #0x30, R14 ;decode dd
-        MOV R4,R9
-        AND #0x0C,R9  ;decode ss
+        POP.W R7                        ;We return the used registers to the their original state. 
+        POP.W R6
+        POP.W R5
         
-        call #load_operand
+        RET                             ;We return to wherever we were called 
+      
+        JMP $
         
-        cmp.b #00000000b,R9
-        jeq add_R10
-        
-        cmp.b #00000100b,R9
-        jeq add_R11
-        
-        cmp.b #00001000b,R9
-        jeq add_R12
-        
-        cmp.b #00001100b,R9
-        jeq add_R13
-
-twos_complement_operation:
-        mov R4,R14
-        AND #00000011,R14
-        
-        cmp.b #00000000b,R14
-        jeq Tws_R10
-        cmp.b #00000001b,R14
-        jeq Tws_R11
-        cmp.b #00000010b,R14
-        jeq Tws_R12
-        cmp.b #00000011b,R14
-        jeq Tws_R13
-
-Tws_R10: 
-        inv R10
-        inc R10
-        call ALU_RETURN ;Needs to be implemented, next step after alu is done
-
-Tws_R11: 
-        inv R11
-        inc R11
-        call ALU_RETURN
-Tws_R12: 
-        inv R12
-        inc R12
-        call ALU_RETURN
-Tws_R13: 
-        inv R13
-        inc R13
-        call ALU_RETURN
-Tws_R14: 
-        inv R14
-        inc R14
-        call ALU_RETURN
-        
-shift_right_operation:
-        mov R4,R14
-        AND #00000011,R14
-        
-        cmp.b #00000000b,R14
-        jeq shift_R10
-        cmp.b #00000001b,R14
-        jeq shift_R11
-        cmp.b #00000010b,R14
-        jeq shift_R12
-        cmp.b #00000011b,R14
-        jeq shift_R13
-
-shift_R10:
-        rra R10
-shift_R11:
-        rra R11
-shift_R12:
-        rra R12
-shift_R13:
-        rra R13
-        
-ALU_RETURN:
-        
-
-        
-load_operand:
-
-        cmp.b #00000000b, R14
-        jeq load_register_10
-        
-        cmp.b #00010000b, R14
-        jeq load_register_11
-        
-        cmp.b #00100000b, R14
-        jeq load_register_12
-        
-        cmp.b #00110000b, R14
-        jeq load_register_13
-        
-        
-        
-load_register_10:
-        mov R10,15
-        ret
-        
-load_register_11:
-        mov R11,R15
-        ret
-
-load_register_12:
-        mov R12,R15
-        ret
-
-load_register_13:
-        mov R13,R15
-        ret
-
-add_R10:
-        add R10,R15
-        call #store_result
-        ret
-add_R11:
-        add R11,R15
-        call #store_result
-        ret
-add_R12:
-        add R12,R15
-        call #store_result
-        ret
-add_R13:
-        add R13,R15
-        call #store_result
-        ret
-        
-store_result: 
-
-
-        cmp.b #00000000b, R14 ;I DONT THINK WE NEED THIS SINCE WE DONT WRITE TO R10
-        jeq store_R10
-        
-        cmp.b #00010000b, R14
-        jeq store_R11
-        
-        cmp.b #00100000b, R14
-        jeq store_R12
-        
-        cmp.b #00110000b, R14
-        jeq store_R13
- 
-store_R10:      ;AGAIN I DONT THIN THIS IS NECCESARY JUST ADDING TO KEEP CODE CONSISTENT CAN BE REMOVED 
-                ;MAYBE ADDING ERROR TEXT OR SOMETHING
-        mov R15,R8
-        mov R8,R10
-        ret
-store_R11:
-        mov R15,R8
-        mov R8,R11
-        ret
-store_R12:
-        mov R15,R8
-        mov R8,R12
-        ret
-store_R13:
-        mov R15,R8
-        mov R8,R13
-        ret
-         
-        JMP $                           ; jump to current location '$'
-                                        ; (endless loop)
         END
+
+
+        
+ 
+    
