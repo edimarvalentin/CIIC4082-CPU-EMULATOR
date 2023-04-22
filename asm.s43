@@ -508,7 +508,7 @@ SHR_SUB_END:
 
 ;Fecha: 21/abr/2023    
 JR30_SUB:
-        CMP.B #0, R3
+        CMP.B #0,R12
         JNE JR30_SUB_END
         AND.B #00001111b, R5
         MOV.B R5, R4       
