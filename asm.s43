@@ -242,10 +242,7 @@ LOAD_SUB:
         
         PUSH.B R5
         AND.B #00000011b, R5            ;We should point now to the correct register
-        
-        CMP.B #0, R5                    ;Register 0
-        JEQ LOAD_SUB_R0
-
+       
         CMP.B #1, R5                    ;Register 1
         JEQ LOAD_SUB_R1
 
@@ -255,9 +252,7 @@ LOAD_SUB:
         CMP.B #3, R5                    ;Register 3
         JEQ LOAD_SUB_R3
         
-LOAD_SUB_R0:
-        MOV.B R7, R10                   ; MBR TO R0
-        JMP LOAD_SUB_END
+
         
 LOAD_SUB_R1:
         MOV.B R7, R11                   ; MBR TO R1
