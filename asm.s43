@@ -191,6 +191,12 @@ DECODER:
         POP.B R5
         JEQ DECODER_SHR_SUB
         
+        ;Is it OUT ?
+        PUSH R5
+        AND.B #11110000B,R5
+        CMP.B #11100000B,R5
+        JEQ DEOCODER_OUT_SUB
+        
         ;Is it a Jump if R3?
         PUSH.B R5
         AND.B #00000000b, R5
@@ -216,6 +222,10 @@ DECODER_NEG_SUB:
         
 DECODER_SHR_SUB:
         CALL #SHR_SUB
+        RET
+        
+DEOCODER_OUT_SUB:
+        CALL #OUT_SUB
         RET
         
 DECODER_JR30_SUB:
