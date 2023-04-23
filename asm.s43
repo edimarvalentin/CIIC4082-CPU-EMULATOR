@@ -18,7 +18,7 @@
                 ;OUT R0
                 ;to R0
 
-RAM     db      11100110b, 01111001b, 10010100b, 11000001b, 11000101b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+RAM     db      11001101b, 01111001b, 10010100b, 11000001b, 11000101b, 11100110b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
 
 ; Letters and Digits Mapping for LCD
 ; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
@@ -71,7 +71,7 @@ runindebugger db 0 ;1 to test in debugger 0 otherwise
         
       
 ;To know and compare what state is the program in       
-STATE    dw    2
+STATE    dw    0
 
 S2COUNT  dw    0
         
@@ -143,6 +143,9 @@ StartLoop:
         JLO StartLoop
         
 SETUP:  
+
+        MOV.W   #2,&LCDCMEMCTL          ;Clear LCD memory
+
         MOV.B #0,R10                    ;Always 0
         MOV.B #128,R11
         MOV.B #0, R4                    ; R4 AS PC
@@ -211,6 +214,13 @@ DECODER:
         POP.B R5
         JEQ DECODER_SHR_SUB
         
+        ;Is it In?
+        PUSH.B R5
+        AND.B #00110000b, R5
+        CMP.B #0, R5 
+        POP.B R5
+        JEQ DECODER_IN_SUB
+        
         ;Is it OUT ?
         PUSH.B R5
         AND.B #11110000B,R5
@@ -243,6 +253,10 @@ DECODER_NEG_SUB:
         
 DECODER_SHR_SUB:
         CALL #SHR_SUB
+        RET
+        
+DECODER_IN_SUB:
+        CALL #IN_SUB
         RET
         
 DEOCODER_OUT_SUB:
@@ -522,6 +536,68 @@ SHR_SUB_R3:
       
 SHR_SUB_END:
         RET
+        
+;Objetivo: Guardar los dos bits correspondientes a P1.1 & P1.2 en el registro designado
+
+;Precondiciones: (IR) R5 tine que especificar el registro
+
+;Postcondiciones: El regisgtro designado tendra algun valor entre 0 y 3
+
+;Autor: Edimar Valentin Kery
+
+;Fecha: 21/abr/2023          
+IN_SUB:
+        MOV.B #02h,  &0xA22
+        
+        CALL #DELAY_3S
+        
+        AND.B #11111101b, &0xA22
+        
+        PUSH.W R4
+        
+        MOV.B &P1IN, R4
+        
+        RRA.W R4
+        
+        AND.B #00000011b, R5
+        
+        CMP.B #0, R5
+        JEQ IN_SUB_R0
+        
+        CMP.B #1, R5
+        JEQ IN_SUB_R1
+        
+        CMP.B #2, R5
+        JEQ IN_SUB_R2
+        
+        CMP.B #3, R5
+        JEQ IN_SUB_R3
+        
+IN_SUB_R0:
+        MOV.B R4, R10
+        JMP IN_SUB_END
+        
+IN_SUB_R1:
+        MOV.B R4, R11
+        JMP IN_SUB_END
+        
+IN_SUB_R2:
+        MOV.B R4, R12
+        JMP IN_SUB_END
+        
+IN_SUB_R3:
+        MOV.B R4, R13
+        JMP IN_SUB_END
+
+IN_SUB_END:
+        POP R4
+        RET
+        
+        
+
+      
+      
+        
         
 
 ;Objetivo: Hacer output al display del MSP 
@@ -1720,7 +1796,7 @@ END_PORT1_ISR:
         reti
         
    
-;Objetivo: Crear un delay para no actuar en el sonido de los botons s1 y s2
+;Objetivo: Crear un delay para no actuar en el sonido de los botones s1 y s2
 
 ;Precondiciones: Ninguna
 
@@ -1738,7 +1814,47 @@ NEXT:
         JNZ NEXT
         POP.W R4
         RET
-                                              
+        
+
+;Objetivo: Mantener al MSP430 "ocupado" por 3 segundos
+
+;Precondiciones: Ninguna
+
+;Postcondiciones: La subrutina no genera cambios
+
+;Autor: Edimar Valentin Kery
+
+;Fecha: 21/abr/2023            
+DELAY_3S:
+       PUSH.W R4
+       PUSH.W R5
+       
+       CALL #DELAY_3S_LOOP_6
+       
+       POP.W R5
+       POP.W R4
+       RET
+
+DELAY_3S_LOOP_6:
+      MOV #6, R4
+      CALL #LOOP_6
+      RET
+
+LOOP_6:
+      CALL #DELAY_3S_LOOP_62500
+      DEC R4
+      JNZ LOOP_10
+      RET
+      
+DELAY_3S_LOOP_62500:
+      MOV #62500, R5
+      CALL LOOP_62500
+      
+LOOP_62500:
+      DEC R5
+      JNZ LOOP_37500
+      RET
+      
 END      
    
 
