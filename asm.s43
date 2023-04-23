@@ -18,7 +18,8 @@
                 ;OUT R0
                 ;to R0
 
-RAM     db      11001101b, 01111001b, 10010100b, 11000001b, 11000101b, 11100110b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+;110011dd
+RAM     db      11001101, 01111001b, 10010100b, 11000001b, 11000101b, 11100110b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
 
 ; Letters and Digits Mapping for LCD
 ; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
@@ -1826,39 +1827,28 @@ NEXT:
 
 ;Fecha: 21/abr/2023            
 DELAY_3S:
-       PUSH.W R4
-       PUSH.W R5
-       
-       CALL #DELAY_3S_LOOP_6
-       
-       POP.W R5
-       POP.W R4
-       RET
+           ; Assuming a 1 MHz clock
+    PUSH.B R14
+    PUSH.B R15
+    PUSH.B R8
+    ; Initialize loop counters
+    mov #500, R14
+    mov #3000, R15
 
-DELAY_3S_LOOP_6:
-      MOV #6, R4
-      CALL #LOOP_6
-      RET
+delay_outer_loop:
+    ; Inner loop (3,000 cycles per iteration)
+    mov R15, R8
+delay_inner_loop:
+    dec R8
+    jnz delay_inner_loop
 
-LOOP_6:
-      CALL #DELAY_3S_LOOP_62500
-      DEC R4
-      JNZ LOOP_10
-      RET
-      
-DELAY_3S_LOOP_62500:
-      MOV #62500, R5
-      CALL LOOP_62500
-      
-LOOP_62500:
-      DEC R5
-      JNZ LOOP_37500
-      RET
+    ; Decrement outer loop counter and check if it reached zero
+    dec R14
+    jnz delay_outer_loop
+    POP.B R8
+    POP.B R15
+    POP.B R14
+    RET
       
 END      
    
-
-
-        
- 
-    
