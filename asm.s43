@@ -65,6 +65,8 @@ FOURTEEN  db    28,31
 FITHTEEN  db    28,32
         align   1
 pos1    dw 0x0A29,0x0a25,0x0a23,0x0a2e,0x0a27
+        align   1
+runindebugger db 1 ;1 to test in debugger 0 otherwise
         
         
       
@@ -693,6 +695,13 @@ LCDCheck:
        
 LCDEND:
         bis.b  #1,&0x0a26
+        cmp.b #0, runindebugger
+        JEQ countdown
+        
+noCountdown:
+      CALL #LOOP
+      RET
+        
         
 countdown:
     ; Create a 0.1-second (100 ms) delay using nested loops
@@ -952,6 +961,7 @@ Draw9tR5:
      RET
 end_countdown:
      Call #Draw0tR7
+     CALL #LOOP
      RET
 ; Countdown reached 0
 
@@ -1115,6 +1125,7 @@ DisplayZERO:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayOne:
@@ -1127,6 +1138,7 @@ DisplayOne:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
 
 DisplayTWO:
@@ -1139,6 +1151,7 @@ DisplayTWO:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
 
 DisplayThree:
@@ -1151,6 +1164,7 @@ DisplayThree:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
 
 DisplayFour:
@@ -1163,6 +1177,7 @@ DisplayFour:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
 
 DisplayFive:
@@ -1175,6 +1190,7 @@ DisplayFive:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
 
 DisplaySix:
@@ -1187,6 +1203,7 @@ DisplaySix:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplaySeven:
@@ -1199,6 +1216,7 @@ DisplaySeven:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
 
 DisplayEight:
@@ -1211,6 +1229,7 @@ DisplayEight:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayNine:
@@ -1223,6 +1242,7 @@ DisplayNine:
         MOV.B lowByte(R5), 0x0A20+1(R6)
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayTen:
@@ -1250,6 +1270,7 @@ DisplayTenLoop:
         POP R7
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayElleven:
@@ -1277,6 +1298,7 @@ DisplayEllevenLoop:
         POP R7
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayTwelve:
@@ -1305,6 +1327,7 @@ DisplayTwelveLoop:
         POP R7
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayThirdteen:
@@ -1332,6 +1355,7 @@ DisplayThirdteenLoop:
         POP R7
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayFourteen:
@@ -1359,6 +1383,7 @@ DisplayFourteenLoop:
         POP R7
         POP R6
         POP R5
+        CALL #LOOP
         RET
         
 DisplayFithteen:
@@ -1386,6 +1411,7 @@ DisplayFithteenLoop:
         POP.B R7
         POP.B R6
         POP.B R5
+        CALL #LOOP
         RET
         
         
@@ -1499,6 +1525,7 @@ BATT:
       
 DisplayBattFinish:
       pop.b R8
+      CALL #LOOP
       RET
         
 ;Objetivo: Cambiar el contenido del PC si R3 tiene un 0
@@ -1517,6 +1544,7 @@ JR30_SUB:
         AND.B #00001111b, R5
         MOV.B R5, R4       
 JR30_SUB_END:
+        CALL #LOOP
         RET
         
         
