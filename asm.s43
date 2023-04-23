@@ -18,7 +18,7 @@
                 ;OUT R0
                 ;to R0
 
-RAM     db      11100100b, 01111001b, 10010100b, 11000001b, 11000101b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+RAM     db      11100101b, 01111001b, 10010100b, 11000001b, 11000101b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
 
 ; Letters and Digits Mapping for LCD
 ; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
@@ -141,7 +141,7 @@ StartLoop:
         
 SETUP:  
         MOV.B #0,R10                    ;Always 0
-        MOV.B #12,R11
+        MOV.B #128,R11
         MOV.B #0, R4                    ; R4 AS PC
         MOV.B #0, R5                    ; R5 AS IR
         MOV.B #0, R6                    ; R6 AS MAR
@@ -358,7 +358,7 @@ STORE_SUB_RAM:
 
 ;Fecha: 21/abr/2023    
 ADD_SUB:
-      PUSH.B R5
+        PUSH.B R5
         AND.B #00001100b, R5
         RRA.B R5
         RRA.B R5
@@ -542,8 +542,7 @@ OUT_SUB:
       JEQ HexDisplay
       CMP.B #1,R5
       JEQ Bateria
-      CMP #2,R5
-      JEQ Timmer
+      
 
 HexDisplay:
       POP.B R5    ;Restore Instrucction to full version
@@ -562,8 +561,8 @@ HexDisplay:
 
 HexDisplayR0:  
 
-       PUSH.B R5
-       PUSH.B R6
+        PUSH.B R5
+        PUSH.B R6
         Mov.B #27,R5
         MOV.B #7,R6
         MOV.B highByte(R5),0x0A20(R6)
@@ -681,11 +680,22 @@ HexDisplayR3:
         JEQ DisplayFithteen
         RET
         
-DisplayZERO:        
+DisplayZERO:
+
+        PUSH.B R5
+        PUSH.B R6
+        Mov.B #27,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+        
 DisplayOne:
 
-       PUSH.B R5
-       PUSH.B R6
+        PUSH.B R5
+        PUSH.B R6
         Mov.B #28,R5
         MOV.B #7,R6
         MOV.B highByte(R5),0x0A20(R6)
@@ -696,8 +706,8 @@ DisplayOne:
 
 DisplayTWO:
 
-       PUSH.B R5
-       PUSH.B R6
+        PUSH.B R5
+        PUSH.B R6
         Mov.B #29,R5
         MOV.B #7,R6
         MOV.B highByte(R5),0x0A20(R6)
@@ -708,8 +718,8 @@ DisplayTWO:
 
 DisplayThree:
 
-       PUSH.B R5
-       PUSH.B R6
+        PUSH.B R5
+        PUSH.B R6
         Mov.B #30,R5
         MOV.B #7,R6
         MOV.B highByte(R5),0x0A20(R6)
@@ -954,6 +964,106 @@ DisplayFithteenLoop:
         RET
 
 Bateria:
+
+      POP.B R5    ;Restore Instrucction to full version
+      Push.B R5   ;keep another copy to mask R5
+      AND #00001100B,R5
+      RRA R5
+      RRA R5
+      CMP.B #1,R5
+      JEQ BateriaDisplayR1
+      CMP.B #2,R5
+      JEQ BateriaDisplayR2
+      CMP.B #3,R5
+      JEQ BateriaDisplayR3
+      RET
+
+BateriaDisplayR1:
+      
+      MOV R11,R8
+      CALL #DisplayBattR8
+      RET
+      
+BateriaDisplayR2:
+      
+      MOV R12,R8
+      CALL #DisplayBattR8
+      RET
+      
+BateriaDisplayR3:
+      PUSH.B R8
+      MOV R13,R8
+      CALL #DisplayBattR8
+      RET
+
+DisplayBattR8:
+      
+      CMP.B #128,R8
+      JEQ B1
+      CMP.B #64,R8
+      JEQ B2
+      CMP.B #32,R8
+      JEQ B3
+      CMP.B #16,R8
+      JEQ B4
+      CMP.B #8,R8
+      JEQ B5
+      CMP.B #4,R8
+      JEQ B6
+      CMP.B #2,R8
+      JEQ Bracket
+      CMP.B #1,R8
+      JEQ BATT
+      RET
+           
+      
+B1:
+      bis.b #00100000b,&0xa31
+      sub #64,R8
+      Call #DisplayBattR8
+      RET
+B2:
+      bis.b #00100000b,&0XA2D
+      sub #32,R8
+      Call #DisplayBattR8
+      RET
+B3:
+      bis.b #01000000b,&0xa31
+      sub.B #16,R8
+      Call #DisplayBattR8
+      RET
+B4:
+      bis.b #01000000b,&0XA2D
+      sub #8,R8
+      Call #DisplayBattR8
+      RET      
+B5:
+      bis.b #10000000b,&0xa31
+      sub #4,R8
+      Call #DisplayBattR8
+      RET   
+      
+B6:
+      bis.b #10000000b,&0XA2D
+      sub #2,R8
+      Call #DisplayBattR8
+      RET 
+
+Bracket:
+      bis.b #00010000B,&0XA31
+      SUB #1,R8
+      CALL #DisplayBattR8
+      RET
+BATT:
+      bis.b #00010000B,&0XA2D
+      CALL #DisplayBattFinish
+      RET
+      
+DisplayBattFinish:
+      pop.b R8
+      RET
+          
+
 Timmer:
         
 ;Objetivo: Cambiar el contenido del PC si R3 tiene un 0
