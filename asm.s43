@@ -693,55 +693,268 @@ LCDCheck:
        
 LCDEND:
         bis.b  #1,&0x0a26
-        POP  R9
-        POP  R6
-        POP  R7
-        POP  R4
-        CALL #StartDelay
-        RET
-;DELAY 1 Y SUBTRACT R8 VALUE
-
-StartDelay:
-        Call #innerdelay
-        Call #Outerdelay
-        dec R8
-        Call #TimerCIEN
-        RET
         
-innerdelay:
-        push.W R6
-        PUSH.W R7
-        call #innerDelayLoop
-        ret
-Outerdelay:
-        push.w R6
-        push.W R7
-        push.w  R6                                                               ; Store Original Values for R6 and R7 in the stack
-        push.w  R7
-        call    #outerdelayLoop                                                ; Start the 3 secs delay      
-        pop.w   R7                                                               ; Restore the contents of the registers
-        pop.w   R6
-        ret
-       
-outerdelayLoop:
-        mov.w   #2, R6                                                           ; R6 will act as our outer loop
-        call    #outerDelayLoopCountdown                                       ; Start the outer loop for the delay
-        ret
-   
-outerDelayLoopCountdown:
-        call    #innerDelayLoop                                                ; for each outer loop, execute the inner loop
-        dec.w   R6
-        jnz     outerDelayLoopCountdown
-        ret
-       
-innerDelayLoop:
-        mov.w   #62500, R7                                                       ; R7 will act as our inner loop
-        call    #InnerDelayLoopCountdown    
-       
-InnerDelayLoopCountdown:
-        dec.w   R7
-        jnz     InnerDelayLoopCountdown
-        ret
+countdown:
+    ; Create a 0.1-second (100 ms) delay using nested loops
+    bis.b  #1,&0x0a26
+    mov #8, R10
+outer_loop:
+    mov #4000, R11
+inner_loop:
+    dec R11
+    jnz inner_loop
+    dec R10
+    jnz outer_loop
+
+    ; Update the countdown
+    dec R7            ; Decrease the tenths of seconds
+    cmp #9, R7        ; Check if R7 > 9 after decrement (underflowed)
+    jlo check_end
+
+    ; Reset the tenths of seconds and decrease the ones of seconds
+    mov #9, R7
+    dec R6
+    cmp #9, R6        ; Check if R6 > 9 after decrement (underflowed)
+    jlo check_end
+
+    ; Reset the ones of seconds and decrease the tens of seconds
+    mov #9, R6        ; Reset R6 to 9
+    dec R5
+
+check_end:
+    ; Check if the countdown has reached 0
+    cmp #0, R5
+    jne update_display
+    cmp #0, R6
+    jne update_display
+    cmp #0, R7
+    jne update_display
+    jmp end_countdown
+
+update_display:
+    ; Call the update_display function to display the updated values (R5, R6, and R7)
+    ; The implementation depends on the specific display and hardware setup
+    CALL #ReDrawR7
+    CALL #ReDrawR6
+    CALL #ReDrawR5
+    jmp countdown
+    
+ ;  0     1    2     3      4    5     6      7    8     9
+;0xFC, 0x60, 0xDB, 0xF3, 0x67, 0xB7, 0xBF, 0x80, 0xFF, 0xF7  
+;0x28, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00 
+ReDrawR7:
+    CMP.B #0,R7
+    JEQ Draw0tR7
+    CMP.B #1,R7
+    JEQ Draw1tR7
+    CMP.B #2,R7
+    JEQ Draw2tR7
+    CMP.B #3,R7
+    JEQ Draw3tR7
+    CMP.B #4,R7
+    JEQ Draw4tR7
+    CMP.B #5,R7
+    JEQ Draw5tR7
+    CMP.B #6,R7
+    JEQ Draw6tR7
+    CMP.B #7,R7
+    JEQ Draw7tR7
+    CMP.B #8,R7
+    JEQ Draw8tR7
+    CMP.B #9,R7
+    JEQ Draw9tR7
+    
+Draw0tR7:
+     mov.b #0xFC,&0xA23
+     mov.b #0x28,&0xA24
+     RET
+Draw1tR7:
+     mov.b #0x60,&0xA23
+     mov.b #0x20,&0xA24
+     RET
+
+Draw2tR7:
+     mov.b #0xDB,&0xA23
+     mov.b #0x00,&0xA24
+     RET
+Draw3tR7:
+     mov.b #0xF3,&0xA23
+     mov.b #0x00,&0xA24
+     RET
+
+Draw4tR7: 
+     mov.b #0x67,&0xA23
+     mov.b #0x00,&0xA24
+     RET
+
+Draw5tR7:
+     mov.b #0xB7,&0xA23
+     mov.b #0x00,&0xA24
+     RET
+
+Draw6tR7:
+     mov.b #0xBF,&0xA23
+     mov.b #0x00,&0xA24
+     RET
+
+Draw7tR7:
+     mov.b #0x80,&0xA23
+     mov.b #0x28,&0xA24
+     RET
+
+Draw8tR7:
+     mov.b #0xFF,&0xA23
+     mov.b #0x00,&0xA24
+     RET
+
+Draw9tR7:
+     mov.b #0xF7,&0xA23
+     mov.b #0x00,&0xA24
+     RET
+
+ReDrawR6:
+    CMP.B #0,R6
+    JEQ Draw0tR6
+    CMP.B #1,R6
+    JEQ Draw1tR6
+    CMP.B #2,R6
+    JEQ Draw2tR6
+    CMP.B #3,R6
+    JEQ Draw3tR6
+    CMP.B #4,R6
+    JEQ Draw4tR6
+    CMP.B #5,R6
+    JEQ Draw5tR6
+    CMP.B #6,R6
+    JEQ Draw6tR6
+    CMP.B #7,R6
+    JEQ Draw7tR6
+    CMP.B #8,R6
+    JEQ Draw8tR6
+    CMP.B #9,R6
+    JEQ Draw9tR6
+    
+Draw0tR6:
+     mov.b #0xFC,&0XA25
+     mov.b #0x28,&0XA26
+     RET
+Draw1tR6:
+     mov.b #0x60,&0XA25
+     mov.b #0x20,&0XA26
+     RET
+
+Draw2tR6:
+     mov.b #0xDB,&0XA25
+     mov.b #0x00,&0XA26
+     RET
+Draw3tR6:
+     mov.b #0xF3,&0XA25
+     mov.b #0x00,&0XA26
+     RET
+
+Draw4tR6: 
+     mov.b #0x67,&0XA25
+     mov.b #0x00,&0XA26
+     RET
+
+Draw5tR6:
+     mov.b #0xB7,&0XA25
+     mov.b #0x00,&0XA26
+     RET
+
+Draw6tR6:
+     mov.b #0xBF,&0XA25
+     mov.b #0x00,&0XA26
+     RET
+
+Draw7tR6:
+     mov.b #0x80,&0XA25
+     mov.b #0x28,&0XA26
+     RET
+
+Draw8tR6:
+     mov.b #0xFF,&0XA25
+     mov.b #0x00,&0XA26
+     RET
+
+Draw9tR6:
+     mov.b #0xF7,&0XA25
+     mov.b #0x00,&0XA26
+     RET
+ReDrawR5:
+    CMP.B #0,R5
+    JEQ Draw0tR5
+    CMP.B #1,R5
+    JEQ Draw1tR5
+    CMP.B #2,R5
+    JEQ Draw2tR5
+    CMP.B #3,R5
+    JEQ Draw3tR5
+    CMP.B #4,R5
+    JEQ Draw4tR5
+    CMP.B #5,R5
+    JEQ Draw5tR5
+    CMP.B #6,R5
+    JEQ Draw6tR5
+    CMP.B #7,R5
+    JEQ Draw7tR5
+    CMP.B #8,R5
+    JEQ Draw8tR5
+    CMP.B #9,R5
+    JEQ Draw9tR5
+    
+Draw0tR5:
+     mov.b #0xFC,&0XA29
+     mov.b #0x28,&0XA2A
+     RET
+Draw1tR5:
+     mov.b #0x60,&0XA29
+     mov.b #0x20,&0XA2A
+     RET
+
+Draw2tR5:
+     mov.b #0xDB,&0XA29
+     mov.b #0x00,&0XA2A
+     RET
+Draw3tR5:
+     mov.b #0xF3,&0XA29
+     mov.b #0x00,&0XA2A
+     RET
+
+Draw4tR5: 
+     mov.b #0x67,&0XA29
+     mov.b #0x00,&0XA2A
+     RET
+
+Draw5tR5:
+     mov.b #0xB7,&0XA29
+     mov.b #0x00,&0XA2A
+     RET
+
+Draw6tR5:
+     mov.b #0xBF,&0XA29
+     mov.b #0x00,&0XA2A
+     RET
+
+Draw7tR5:
+     mov.b #0x80,&0XA29
+     mov.b #0x28,&0XA2A
+     RET
+
+Draw8tR5:
+     mov.b #0xFF,&0XA29
+     mov.b #0x00,&0XA2A
+     RET
+
+Draw9tR5:
+     mov.b #0xF7,&0XA29
+     mov.b #0x00,&0XA2A
+     RET
+end_countdown:
+     Call #Draw0tR7
+     RET
+; Countdown reached 0
+
 
 
       
