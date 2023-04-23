@@ -18,7 +18,7 @@
                 ;OUT R0
                 ;to R0
 
-RAM     db      11100101b, 01111001b, 10010100b, 11000001b, 11000101b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+RAM     db      11100110b, 01111001b, 10010100b, 11000001b, 11000101b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
 
 ; Letters and Digits Mapping for LCD
 ; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
@@ -64,6 +64,7 @@ FOURTEEN  db    28,31
         align   1
 FITHTEEN  db    28,32
         align   1
+pos1    dw 0x0A29,0x0a25,0x0a23,0x0a2e,0x0a27
         
         
       
@@ -530,7 +531,7 @@ SHR_SUB_END:
 ;Postcondiciones: El display mostrara el contenido del registro ss en la direccion aa
 ;                aa 00 = HexDisplay
 ;                   01 = Bateria
-;                   10= Timmer
+;                   10= Timer
 
 ;Autor: John Trinidad
 
@@ -541,9 +542,219 @@ OUT_SUB:
       CMP.B #0,R5
       JEQ HexDisplay
       CMP.B #1,R5
-      JEQ Bateria
+      JEQ BateriaCall
+      JNE Timer
       
+BateriaCall:
+      Call #Bateria 
+      ret
+Timer: 
+      PUSH.W R4
+      PUSH.W R6
+      PUSH.W R7
+      PUSH.W R9
+      MOV.B #0,R4
+      MOV.B #0,R6
+      MOV.B #0,R9
+      bic.b   #0xff,&0x0A29
+      bic.b   #0xff,&0x0A2a
+      bic.b   #0xff,&0x0a25
+      bic.b   #0xff,&0x0A26
+      bic.b   #0xff,&0x0a23
+      Bic.b   #0xff,&0x0A24
+      bis     #0000000000010000b,&TA0CTL
+      POP.B R5    ;Restore Instrucction to full version
+      Push.B R5   ;keep another copy to mask R5
+      AND #00001100B,R5
+      RRA R5
+      RRA R5
+      CMP.B #0,R5
+      JEQ TimerR0
+      CMP.B #1,R5
+      JEQ TimerR1
+      CMP.B #2,R5
+      JEQ TimerR2
+      CMP.B #3,R5
+      JEQ TimerR3
+      
+      
+TimerR0:
+      PUSH.B R8
+      MOV.B R10,R8
+      Call #TimerCIEN
+      RET
 
+TimerR1:
+      PUSH.B R8
+      MOV.B R11,R8
+      Call #TimerCIEN
+      RET
+TimerR2:
+      PUSH.B R8
+      MOV.B R12,R8
+      Call #TimerCIEN
+      RET
+TimerR3:
+      PUSH.B R8
+      MOV.B R13,R8
+      Call #TimerCIEN
+      RET
+      
+TimerCIEN:
+       cmp.B #100,R8
+       JLO TimerDIEZ
+       Sub.w #100,R8
+       inc.b R4
+       JMP TimerCIEN
+TimerDIEZ:
+       cmp #10,R8
+       JLO TimerUNO
+       Sub.w #10,R8
+       inc.b R6
+       JMP TimerDIEZ
+TimerUNO:
+       cmp #1,R8
+       JLO SaveTimerValues
+       Sub.w #1,R8
+       inc.b R7
+       JMP TimerUNO
+
+SaveTimerValues:
+      Push.w R7
+      Push.w R6
+      Push.w R4
+
+SetTimerValuesToLcd:
+      POP.b R8
+      MOV.W pos1(R9),R15
+      cmp #0,R8
+      jEQ setLCDZero
+      cmp #1,R8
+      JEQ setLCDOne
+      cmp #2,R8
+      JEQ setLCDTwo
+      cmp #3,R8
+      JEQ setLCDThree
+      cmp #4,R8
+      JEQ setLCDFour
+      cmp #5,R8
+      JEQ setLCDFive
+      cmp #6,R8
+      JEQ setLCDSix
+      cmp #7,R8
+      JEQ setLCDSeven
+      cmp #8,R8
+      JEQ setLCDEight
+      JMP setLCDNine
+      
+setLCDZero:
+        mov.b #11111100b,0(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDOne:
+        mov.b #01010000b,1(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDTwo:
+        mov.b #11011011b,0(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDThree:
+        mov.b #11110011b,0(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDFour:
+        mov.b #01100111b,0(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDFive:
+        mov.b #10110111b,0(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDSix:
+        mov.b #10111111b,0(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDSeven:
+        mov.b #11100000b,0(R15)
+        add #2,R9
+        JMP LCDCheck
+setLCDEight:
+        mov.b #11111111b,0(R15)
+        add  #2,R9
+        JMP  LCDCheck
+setLCDNine:
+        mov.b #11100111b,0(R15)
+        add #2,R9
+       
+LCDCheck:
+        cmp #6,R9
+        JNZ SetTimerValuesToLcd
+       
+LCDEND:
+        bis.b  #1,&0x0a26
+        POP  R9
+        POP  R6
+        POP  R7
+        POP  R4
+        CALL #StartDelay
+        RET
+;DELAY 1 Y SUBTRACT R8 VALUE
+
+StartDelay:
+        Call #innerdelay
+        Call #Outerdelay
+        dec R8
+        Call #TimerCIEN
+        RET
+        
+innerdelay:
+        push.W R6
+        PUSH.W R7
+        call #innerDelayLoop
+        ret
+Outerdelay:
+        push.w R6
+        push.W R7
+        push.w  R6                                                               ; Store Original Values for R6 and R7 in the stack
+        push.w  R7
+        call    #outerdelayLoop                                                ; Start the 3 secs delay      
+        pop.w   R7                                                               ; Restore the contents of the registers
+        pop.w   R6
+        ret
+       
+outerdelayLoop:
+        mov.w   #2, R6                                                           ; R6 will act as our outer loop
+        call    #outerDelayLoopCountdown                                       ; Start the outer loop for the delay
+        ret
+   
+outerDelayLoopCountdown:
+        call    #innerDelayLoop                                                ; for each outer loop, execute the inner loop
+        dec.w   R6
+        jnz     outerDelayLoopCountdown
+        ret
+       
+innerDelayLoop:
+        mov.w   #62500, R7                                                       ; R7 will act as our inner loop
+        call    #InnerDelayLoopCountdown    
+       
+InnerDelayLoopCountdown:
+        dec.w   R7
+        jnz     InnerDelayLoopCountdown
+        ret
+
+
+      
+;Objetivo: Hacer output al display del MSP direccion 00=hex display 
+
+;Precondiciones: IR (R5) debe determinar 00 como output 
+;                
+;               
+
+;Postcondiciones: El display hexadecimal mostrsra el valor del registro deseado
+;                
+
+;Autor: John Trinidad
 HexDisplay:
       POP.B R5    ;Restore Instrucction to full version
       Push.B R5   ;keep another copy to mask R5
@@ -558,6 +769,7 @@ HexDisplay:
       JEQ HexDisplayR2
       CMP.B #3,R5
       JEQ HexDisplayR3
+
 
 HexDisplayR0:  
 
@@ -962,7 +1174,20 @@ DisplayFithteenLoop:
         POP.B R6
         POP.B R5
         RET
+        
+        
 
+;Objetivo: Hacer output al display del MSP direccion 01=Bateria
+
+;Precondiciones: IR (R5) debe determinar 01 como output 
+;                
+;               
+
+;Postcondiciones: El display debe mostrar la Bateria con sus secciones correspondiente
+;                 mostrsra el valor del registro deseado
+;                
+
+;Autor: John Trinidad
 Bateria:
 
       POP.B R5    ;Restore Instrucction to full version
@@ -1062,9 +1287,6 @@ BATT:
 DisplayBattFinish:
       pop.b R8
       RET
-          
-
-Timmer:
         
 ;Objetivo: Cambiar el contenido del PC si R3 tiene un 0
 
