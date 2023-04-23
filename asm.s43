@@ -66,7 +66,7 @@ FITHTEEN  db    28,32
         align   1
 pos1    dw 0x0A29,0x0a25,0x0a23,0x0a2e,0x0a27
         align   1
-runindebugger db 1 ;1 to test in debugger 0 otherwise
+runindebugger db 0 ;1 to test in debugger 0 otherwise
         
         
       
@@ -550,7 +550,8 @@ OUT_SUB:
 BateriaCall:
       Call #Bateria 
       ret
-Timer: 
+Timer:
+      MOV.W #2,&LCDCMEMCTL
       PUSH.W R4
       PUSH.W R6
       PUSH.W R7
