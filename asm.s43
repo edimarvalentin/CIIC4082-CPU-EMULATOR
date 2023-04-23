@@ -550,6 +550,14 @@ OUT_SUB:
 BateriaCall:
       Call #Bateria 
       ret
+      
+;Objetivo: Simular un Timer en el display del MSP
+
+;Precondiciones: (IR) R5 tiene que tener una instruccion valida correspondiente a Timer
+
+;Postcondiciones: Se debe ejecutar un timer desde el valor determinado por el registro hasta 0
+
+;Autor: John Trinidad
 Timer:
       MOV.W #2,&LCDCMEMCTL
       PUSH.W R4
@@ -626,7 +634,14 @@ SaveTimerValues:
       Push.w R7
       Push.w R6
       Push.w R4
+      
+;Objetivo: Escribir en el display el valor inicial del timer en el lcd
 
+;Precondiciones: Los registros deben contener la "traduccion" del registro de origen a tipo decimal
+
+;Postcondiciones: Se escribe el valor completo en la pantalla del MSP
+
+;Autor: John Trinidad
 SetTimerValuesToLcd:
       POP.b R8
       MOV.W pos1(R9),R15
@@ -703,9 +718,16 @@ noCountdown:
       CALL #LOOP
       RET
         
-        
+;Objetivo: Simular un count down en el display
+
+;Precondiciones: indebugger debe contener 0 
+
+;Postcondiciones: Se debe ejecutar un timer desde el valor determinado por el registro hasta 0
+;utilizando un delay para simular conteo regresivo
+
+;Autor: John Trinidad       
 countdown:
-    ; Create a 0.1-second (100 ms) delay using nested loops
+    
     bis.b  #1,&0x0a26
     mov #8, R10
 outer_loop:
@@ -740,18 +762,22 @@ check_end:
     cmp #0, R7
     jne update_display
     jmp end_countdown
+;Objetivo: Cambiar display a valor deseado luego de pasado el delay determinado
 
+;Precondiciones: Debemos estar en indebugger=0 para que se ejecute y se actualice el display
+
+;Postcondiciones: Se debe ejecutar un timer desde el valor determinado por el registro hasta 0
+;                 terminando en 00.0 
+
+;Autor: John Trinidad
 update_display:
-    ; Call the update_display function to display the updated values (R5, R6, and R7)
-    ; The implementation depends on the specific display and hardware setup
+    
     CALL #ReDrawR7
     CALL #ReDrawR6
     CALL #ReDrawR5
     jmp countdown
     
- ;  0     1    2     3      4    5     6      7    8     9
-;0xFC, 0x60, 0xDB, 0xF3, 0x67, 0xB7, 0xBF, 0x80, 0xFF, 0xF7  
-;0x28, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00 
+
 ReDrawR7:
     CMP.B #0,R7
     JEQ Draw0tR7
