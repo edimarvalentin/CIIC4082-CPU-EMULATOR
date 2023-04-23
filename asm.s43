@@ -15,9 +15,10 @@
         
         ORG     0x1C00                  ; moving to set some variables
 
-                ;Load 5
+                ;OUT R0
                 ;to R0
-RAM     db      00111101b, 01111001b, 10010100b, 11000001b, 11000101b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+
+RAM     db      11100100b, 01111001b, 10010100b, 11000001b, 11000101b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
 
 ; Letters and Digits Mapping for LCD
 ; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
@@ -51,9 +52,23 @@ NORELY  db      13, 14, 17, 4, 11, 24
         
 BRYANT  db      1, 17, 24, 0, 13, 19
         align   1
+TEN     db      28,27
+        align   1
+ELLEVEN  db     28,28
+        align   1
+TWELVE  db      28,29
+        align   1
+THRIDTEEN  db  28,30
+        align   1
+FOURTEEN  db    28,31
+        align   1
+FITHTEEN  db    28,32
+        align   1
+        
+        
       
 ;To know and compare what state is the program in       
-STATE    dw    0
+STATE    dw    2
 
 S2COUNT  dw    0
         
@@ -124,7 +139,9 @@ StartLoop:
         CMP #2, STATE
         JLO StartLoop
         
-SETUP:
+SETUP:  
+        MOV.B #0,R10                    ;Always 0
+        MOV.B #12,R11
         MOV.B #0, R4                    ; R4 AS PC
         MOV.B #0, R5                    ; R5 AS IR
         MOV.B #0, R6                    ; R6 AS MAR
@@ -192,9 +209,10 @@ DECODER:
         JEQ DECODER_SHR_SUB
         
         ;Is it OUT ?
-        PUSH R5
+        PUSH.B R5
         AND.B #11110000B,R5
         CMP.B #11100000B,R5
+        POP.B R5
         JEQ DEOCODER_OUT_SUB
         
         ;Is it a Jump if R3?
@@ -290,7 +308,7 @@ LOAD_SUB_END:
 
 ;Fecha: 20/abr/2023    
 STORE_SUB:
-        PUSH.B R5                       ;Back up instruction before we mask it.
+      PUSH.B R5                       ;Back up instruction before we mask it.
         AND.B #00000011b, R5            ;Time to do some binary magic to get our register                   
                                         ;After this, we should be pointing to the right location
         
@@ -340,7 +358,7 @@ STORE_SUB_RAM:
 
 ;Fecha: 21/abr/2023    
 ADD_SUB:
-        PUSH.B R5
+      PUSH.B R5
         AND.B #00001100b, R5
         RRA.B R5
         RRA.B R5
@@ -501,7 +519,443 @@ SHR_SUB_R3:
       
 SHR_SUB_END:
         RET
+        
 
+;Objetivo: Hacer output al display del MSP 
+
+;Precondiciones: IR (R5) tiene que determinar a que direccion se le hara el output
+;                y que registro sera el source del contendio que se mostrara.
+;               
+
+;Postcondiciones: El display mostrara el contenido del registro ss en la direccion aa
+;                aa 00 = HexDisplay
+;                   01 = Bateria
+;                   10= Timmer
+
+;Autor: John Trinidad
+
+OUT_SUB:
+      
+      PUSH.B R5          ;COPY INSTRUCCTION
+      AND.B #00000011B,R5
+      CMP.B #0,R5
+      JEQ HexDisplay
+      CMP.B #1,R5
+      JEQ Bateria
+      CMP #2,R5
+      JEQ Timmer
+
+HexDisplay:
+      POP.B R5    ;Restore Instrucction to full version
+      Push.B R5   ;keep another copy to mask R5
+      AND #00001100B,R5
+      RRA R5
+      RRA R5
+      CMP.B #0,R5
+      JEQ HexDisplayR0
+      CMP.B #1,R5
+      JEQ HexDisplayR1
+      CMP.B #2,R5
+      JEQ HexDisplayR2
+      CMP.B #3,R5
+      JEQ HexDisplayR3
+
+HexDisplayR0:  
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #27,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+        
+        
+HexDisplayR1:
+        
+        cmp #0,R11
+        JEQ DisplayZERO
+        cmp #1,R11
+        JEQ DisplayOne
+        cmp #2,R11
+        JEQ DisplayTWO
+        cmp #3,R11
+        JEQ DisplayThree
+        cmp #4,R11
+        JEQ DisplayFour
+        cmp #5,R11
+        JEQ DisplayFive
+        cmp #6,R11
+        JEQ DisplaySix
+        cmp #7,R11
+        JEQ DisplaySeven
+        cmp #8,R11
+        JEQ DisplayEight
+        cmp #9,R11
+        JEQ DisplayNine
+        cmp #10,R11
+        JEQ DisplayTen 
+        cmp #11,R11
+        JEQ DisplayElleven
+        cmp #12,R11
+        JEQ DisplayTwelve
+        cmp #13,R11
+        JEQ DisplayThirdteen
+        CMP #14,R11
+        JEQ DisplayFourteen
+        CMP #15,R11
+        JEQ DisplayFithteen
+        RET
+
+HexDisplayR2:
+        
+        cmp #0,R12
+        JEQ DisplayZERO
+        cmp #1,R12
+        JEQ DisplayOne
+        cmp #2,R12
+        JEQ DisplayTWO
+        cmp #3,R12
+        JEQ DisplayThree
+        cmp #4,R12
+        JEQ DisplayFour
+        cmp #5,R12
+        JEQ DisplayFive
+        cmp #6,R12
+        JEQ DisplaySix
+        cmp #7,R12
+        JEQ DisplaySeven
+        cmp #8,R12
+        JEQ DisplayEight
+        cmp #9,R12
+        JEQ DisplayNine
+        cmp #10,R12
+        JEQ DisplayTen 
+        cmp #11,R12
+        JEQ DisplayElleven
+        cmp #12,R12
+        JEQ DisplayTwelve
+        cmp #13,R12
+        JEQ DisplayThirdteen
+        CMP #14,R12
+        JEQ DisplayFourteen
+        CMP #15,R12
+        JEQ DisplayFithteen
+        RET
+
+HexDisplayR3:
+        
+        cmp #0,R13
+        JEQ DisplayZERO
+        cmp #1,R13
+        JEQ DisplayOne
+        cmp #2,R13
+        JEQ DisplayTWO
+        cmp #3,R13
+        JEQ DisplayThree
+        cmp #4,R13
+        JEQ DisplayFour
+        cmp #5,R13
+        JEQ DisplayFive
+        cmp #6,R13
+        JEQ DisplaySix
+        cmp #7,R13
+        JEQ DisplaySeven
+        cmp #8,R13
+        JEQ DisplayEight
+        cmp #9,R13
+        JEQ DisplayNine
+        cmp #10,R13
+        JEQ DisplayTen 
+        cmp #11,R13
+        JEQ DisplayElleven
+        cmp #12,R13
+        JEQ DisplayTwelve
+        cmp #13,R13
+        JEQ DisplayThirdteen
+        CMP #14,R13
+        JEQ DisplayFourteen
+        CMP #15,R13
+        JEQ DisplayFithteen
+        RET
+        
+DisplayZERO:        
+DisplayOne:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #28,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+
+DisplayTWO:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #29,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+
+DisplayThree:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #30,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+
+DisplayFour:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #31,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+
+DisplayFive:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #32,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+
+DisplaySix:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #33,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+        
+DisplaySeven:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #34,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+
+DisplayEight:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #35,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+        
+DisplayNine:
+
+       PUSH.B R5
+       PUSH.B R6
+        Mov.B #36,R5
+        MOV.B #7,R6
+        MOV.B highByte(R5),0x0A20(R6)
+        MOV.B lowByte(R5), 0x0A20+1(R6)
+        POP R6
+        POP R5
+        RET
+        
+DisplayTen:
+
+       PUSH.B R5
+       PUSH.B R6
+       PUSH.B R7
+       PUSH.B R8
+        MOV #0,R5
+        MOV #4,R7
+        CALL #DisplayTenLoop
+        RET
+        
+DisplayTenLoop:
+
+        Mov.B alphanumeric(R7),R8
+        MOV.B TEN(R5),R6
+        MOV.B highByte(R6),0x0A20(R8)
+        MOV.B lowByte(R6), 0x0A20+1(R8)
+        INC.B R5
+        INC.B R7
+        CMP.B #3,R5
+        JNE DisplayTenLoop
+        POP R8
+        POP R7
+        POP R6
+        POP R5
+        RET
+        
+DisplayElleven:
+
+       PUSH.B R5
+       PUSH.B R6
+       PUSH.B R7
+       PUSH.B R8
+        MOV #0,R5
+        MOV #4,R7
+        CALL #DisplayEllevenLoop
+        RET
+        
+DisplayEllevenLoop:
+
+        Mov.B alphanumeric(R7),R8
+        MOV.B ELLEVEN(R5),R6
+        MOV.B highByte(R6),0x0A20(R8)
+        MOV.B lowByte(R6), 0x0A20+1(R8)
+        INC.B R5
+        INC.B R7
+        CMP.B #3,R5
+        JNE DisplayEllevenLoop
+        POP R8
+        POP R7
+        POP R6
+        POP R5
+        RET
+        
+DisplayTwelve:
+
+        PUSH.B R5
+        PUSH.B R6
+        PUSH.B R7
+        PUSH.B R8
+        MOV #0,R5
+        MOV #4,R7
+        
+        CALL #DisplayTwelveLoop
+        RET
+        
+DisplayTwelveLoop:
+
+        Mov.B alphanumeric(R7),R8
+        MOV.B TWELVE(R5),R6
+        MOV.B highByte(R6),0x0A20(R8)
+        MOV.B lowByte(R6), 0x0A20+1(R8)
+        INC.B R5
+        INC.B R7
+        CMP.B #3,R5
+        JNE DisplayTwelveLoop
+        POP R8
+        POP R7
+        POP R6
+        POP R5
+        RET
+        
+DisplayThirdteen:
+
+       PUSH.B R5
+       PUSH.B R6
+       PUSH.B R7
+       PUSH.B R8
+        MOV #0,R5
+        MOV #4,R7
+        CALL #DisplayThirdteenLoop
+        RET
+        
+DisplayThirdteenLoop:
+
+        Mov.B alphanumeric(R7),R8
+        MOV.B THRIDTEEN(R5),R6
+        MOV.B highByte(R6),0x0A20(R8)
+        MOV.B lowByte(R6), 0x0A20+1(R8)
+        INC.B R5
+        INC.B R7
+        CMP.B #3,R5
+        JNE DisplayThirdteenLoop
+        POP R8
+        POP R7
+        POP R6
+        POP R5
+        RET
+        
+DisplayFourteen:
+
+       PUSH.B R5
+       PUSH.B R6
+       PUSH.B R7
+       PUSH.B R8
+       MOV #0,R5
+       MOV #4,R7
+       CALL #DisplayFourteenLoop
+       RET
+        
+DisplayFourteenLoop:
+
+        Mov.B alphanumeric(R7),R8
+        MOV.B FOURTEEN(R5),R6
+        MOV.B highByte(R6),0x0A20(R8)
+        MOV.B lowByte(R6), 0x0A20+1(R8)
+        INC.B R5
+        INC.B R7
+        CMP.B #3,R5
+        JNE DisplayFourteenLoop 
+        POP R8
+        POP R7
+        POP R6
+        POP R5
+        RET
+        
+DisplayFithteen:
+
+       PUSH.B R5
+       PUSH.B R6
+       PUSH.B R7
+       PUSH.B R8
+       MOV #0,R5
+       MOV #4,R7
+       CALL #DisplayFithteenLoop
+       RET
+        
+DisplayFithteenLoop:
+
+        Mov.B alphanumeric(R7),R8
+        MOV.B FITHTEEN(R5),R6
+        MOV.B highByte(R6),0x0A20(R8)
+        MOV.B lowByte(R6), 0x0A20+1(R8)
+        INC.B R5
+        INC.B R7
+        CMP.B #3,R5
+        JNE DisplayFithteenLoop 
+        POP.B R8
+        POP.B R7
+        POP.B R6
+        POP.B R5
+        RET
+
+Bateria:
+Timmer:
+        
 ;Objetivo: Cambiar el contenido del PC si R3 tiene un 0
 
 ;Precondiciones: IR (R5) tiene que especificar el valor ira en el PC (R4).
@@ -513,7 +967,7 @@ SHR_SUB_END:
 
 ;Fecha: 21/abr/2023    
 JR30_SUB:
-        CMP.B #0,R12
+        CMP.B #0,R13
         JNE JR30_SUB_END
         AND.B #00001111b, R5
         MOV.B R5, R4       
@@ -531,9 +985,9 @@ JR30_SUB_END:
 
 ;Fecha: 19/abr/2023              
 R4toLCD:
-        PUSH.W R5                       ;We're gonna need these three registers to do our iteration business. We're backing up their contents
-        PUSH.W R6                       ;to the stack.
-        PUSH.W R7                       
+       PUSH.W R5                       ;We're gonna need these three registers to do our iteration business. We're backing up their contents
+       PUSH.W R6                       ;to the stack.
+       PUSH.W R7                       
 
         MOV.B #0, R5                    ;We're gonna use R5 to iterate the alphanumerics on the LCD
 R4toLCDLoop:
@@ -572,7 +1026,7 @@ R4toLCDLoop:
 ;Fecha: 19/abr/2023  
 PORT1_ISR:
         
-        PUSH.W R4
+       PUSH.W R4
         
         NOP
         BIC.B   #6, &P1IFG        
