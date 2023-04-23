@@ -19,7 +19,8 @@
                 ;to R0
 
 ;110011dd
-RAM     db      11001101, 01111001b, 10010100b, 11000001b, 11000101b, 11100110b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+;1110ssaa
+RAM     db      11100110, 01111001b, 10010100b, 11000001b, 11000101b, 11100110b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
 
 ; Letters and Digits Mapping for LCD
 ; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
@@ -1833,7 +1834,7 @@ DELAY_3S:
     PUSH.B R8
     ; Initialize loop counters
     mov #500, R14
-    mov #3000, R15
+    mov #1500, R15
 
 delay_outer_loop:
     ; Inner loop (3,000 cycles per iteration)
