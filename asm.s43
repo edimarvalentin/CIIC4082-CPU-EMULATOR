@@ -1725,6 +1725,12 @@ PORT1_ISR:
         
         
 S1_PRESSED_ISR:
+
+        CMP.W #0, STATE
+        JEQ S1_PRESSED_ISR_S2TOGO
+        JMP END_PORT1_ISR
+        
+S1_PRESSED_ISR_S2TOGO:    
         PUSH.W R4
         MOV.W #S2TOGO, R4
         CALL #R4toLCD
