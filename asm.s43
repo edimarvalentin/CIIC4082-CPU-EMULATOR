@@ -15,11 +15,17 @@
         
         ORG     0x1C00                  ; moving to set some variables
 
-                ;OUT R0
-                ;to R0
+               
+;11001101b in 01
+;11100110b out R1 to 02
+;Load 00101111b ;R2 TO 1111
+;Store 01111110b  ;R3
+;Add 10100000b  ;ADD R2 + R0
+;Neg 11000010b  ;NEG 10
+;Shr 11000111b  ;shift R3
+;JR30 11111011b  ;jr 30 1011
 
-;110011dd
-RAM     db      11001101b, 01111001b, 10010100b, 11000001b, 11000101b, 11100110b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+RAM     db      11001101b, 11100110b, 00101111b, 01111110b, 10100000b, 11000010b, 11000111b,11111011b, 0, 0, 0, 0, 0, 0, 0, 5
 
 ; Letters and Digits Mapping for LCD
 ; Letter/Digit    A     B     C     D     E     F     G     H     I     J     K     L     M      N    O     P    Q    R      S    T     U       V      W    X     Y   Z     Empty  0      1     2     3     4     5     6    7     8     9
@@ -792,6 +798,7 @@ LCDEND:
         JEQ countdown
         
 noCountdown:
+      POP.B R4
       CALL #LOOP
       RET
         
